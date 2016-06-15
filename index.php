@@ -10,13 +10,12 @@
 <body>
 
 	<?php
-	$obj = new BackupDiff();
-   $obj->File1 = 'bckp_tecnonet--usersdata.mysql';
-   $obj->File2 = 'bckp_teste7--usersdata.mysql';
-   $obj->File3 = 'diff_backup.mysql';
+	$obj = new MySQLdumpDiff();
+   $obj->File1 = 'old_backup.sql';
+   $obj->File2 = 'new_backup.sql';
+   $obj->File3 = 'diff_backup.sql';
    $obj->Export = 'print'; // or 'download'
    $obj->ProcessFiles();
-   //echo '<p>Files diff saved in '.$obj->File3.'</p>';
 	?>
 
 </body>

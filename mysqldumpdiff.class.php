@@ -12,6 +12,7 @@ class MySQLdumpDiff
 	public $File1;
 	public $File2;
 	public $File3;
+	public $Export;
 	private $FileDesc;
 
 	function MySQLdumpDiff()
@@ -39,10 +40,10 @@ class MySQLdumpDiff
 			elseif ($begin == "INSERT INTO")
 			{
 				$Table1 = $this->GetTableName($Value1);
+				$InsertArray1 = $this->GetSeparateInserts($Value1);
 				$CorrespKey = array_search($Table1, $AllTables2);
 			 	if ($CorrespKey !== FALSE)
 			 	{
-					$InsertArray1 = $this->GetSeparateInserts($Value1);
 					$InsertArray2 = $this->GetSeparateInserts($FArray2[$CorrespKey]);
 					
 					foreach ($InsertArray1 as $Key=>$Value)
@@ -78,6 +79,14 @@ class MySQLdumpDiff
 								$DeletesArray[] = "DELETE FROM `".$Table1."` WHERE ".$RowId.";";
 							}
 						}
+					}
+				}
+				else
+				{
+					foreach ($InsertArray1 as $Key=>$Value)
+					{
+						$RowId = $this->GetRowIdentifier($Table1, $NextTable, $Value, "update");
+						$DeletesArray[] = "DELETE FROM `".$Table1."` WHERE ".$RowId.";";
 					}
 				}
 			}
@@ -140,6 +149,10 @@ class MySQLdumpDiff
 					$FArray3[] = "INSERT INTO `".$Table2."` VALUES ".implode(",", $ValuesArray).";";
 			 		unset($AllTables1[$CorrespKey]);
 			 	}
+				else
+				{
+					$FArray3[] = $Value2;
+				}
 			}
 			else
 			{
@@ -147,9 +160,15 @@ class MySQLdumpDiff
 			}
 		}
 		
-		$this->OpenFile();
-		//foreach ($FArray3 as $item) { print $item."<br>\n"; }
-		$this->WriteArrayToFile($FArray3);
+		if ($this->Export == 'download')
+		{
+			$this->OpenFile();
+			$this->WriteArrayToFile($FArray3);
+		}
+		else
+		{
+			foreach ($FArray3 as $item) { print $item."<br>\n"; }
+		}
 	}
 
 
@@ -166,6 +185,7 @@ class MySQLdumpDiff
 			fwrite($this->FileDesc, $item);
 		}
 		fclose($this->FileDesc);
+		print "<p>Differences saved in: <strong>".$this->File3."</strong>";
 	}
 	
 
