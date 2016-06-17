@@ -14,7 +14,8 @@
    $obj->File1 = 'old_backup.sql';
    $obj->File2 = 'new_backup.sql';
    $obj->File3 = 'diff_backup.sql';
-   $obj->Export = 'print'; // or 'download'
+   $obj->Options = 2; // 1= with CREATE statements , 2= without
+   $obj->Export = 'print'; // or 'file'
    $obj->ProcessFiles();
 	?>
 
