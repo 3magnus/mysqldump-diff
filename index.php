@@ -14,7 +14,7 @@
    $obj->File1 = 'old_backup.sql';
    $obj->File2 = 'new_backup.sql';
    $obj->File3 = 'diff_backup.sql';
-   $obj->Options = 2; // 1= with CREATE statements , 2= without
+   $obj->Options = array(2,2); // 1= with statistics per table , 2= without / 1= with CREATE statements , 2= without
    $obj->Export = 'print'; // or 'file'
    $obj->ProcessFiles();
 	?>

@@ -56,7 +56,7 @@ class MySQLdumpDiff {
 							if ($FullMatch > -1) {
 								unset($InsertArray2[$FullMatch]);
 								$Result['Repeats']++;
-								if (isset($ExtResult[$Table1]['Repeats'])): $ExtResult[$Table1]['Repeats']++; 	else: $ExtResult[$Table1]['Repeats'] = 1; endif;
+								if (isset($ExtResult[$Table1]['Repeats'])): $ExtResult[$Table1]['Repeats']++; else: $ExtResult[$Table1]['Repeats'] = 1; endif;
 								$Searching = FALSE;
 							}
 							$CurrKey = next($CorrespKey);
@@ -79,7 +79,7 @@ class MySQLdumpDiff {
 										$RowId = $this->GetRowIdentifier($Table1, $NextTable, $Value11, "update");
 										$DeletesArray[] = "UPDATE `".$Table1."` SET".$RowChanges." WHERE ".$RowId.";";
 										$Result['UPDATES']++;
-										if (isset($ExtResult[$Table1]['UPDATES'])): $ExtResult[$Table1]['UPDATES']++; 	else: $ExtResult[$Table1]['UPDATES'] = 1; endif;
+										if (isset($ExtResult[$Table1]['UPDATES'])): $ExtResult[$Table1]['UPDATES']++; else: $ExtResult[$Table1]['UPDATES'] = 1; endif;
 										$Searching = FALSE;
 									}
 								}
@@ -88,8 +88,8 @@ class MySQLdumpDiff {
 							if ($Searching) {
 								$RowId = $this->GetRowIdentifier($Table1, $NextTable, $Value11, "update");
 								$DeletesArray[] = "DELETE FROM `".$Table1."` WHERE ".$RowId.";";
-								$ExtResult[$Table1]['DELETES']++;
-								if (isset($ExtResult[$Table1]['DELETES'])): $ExtResult[$Table1]['DELETES']++; 	else: $ExtResult[$Table1]['DELETES'] = 1; endif;
+								$Result['DELETES']++;
+								if (isset($ExtResult[$Table1]['DELETES'])): $ExtResult[$Table1]['DELETES']++; else: $ExtResult[$Table1]['DELETES'] = 1; endif;
 							}
 						}
 					}
@@ -99,7 +99,7 @@ class MySQLdumpDiff {
 						$RowId = $this->GetRowIdentifier($Table1, $NextTable, $Value, "update");
 						$DeletesArray[] = "DELETE FROM `".$Table1."` WHERE ".$RowId.";";
 						$Result['DELETES']++;
-						if (isset($ExtResult[$Table1]['DELETES'])): $ExtResult[$Table1]['DELETES']++; 	else: $ExtResult[$Table1]['DELETES'] = 1; endif;
+						if (isset($ExtResult[$Table1]['DELETES'])): $ExtResult[$Table1]['DELETES']++; else: $ExtResult[$Table1]['DELETES'] = 1; endif;
 					}
 				}
 			}
@@ -120,7 +120,9 @@ class MySQLdumpDiff {
 					$PrintDeletes = FALSE;
 					unset($DeletesArray);
 				}
-				//$File3Array[] = $Value2;
+				if ($this->Options[1] == 1) {
+					$File3Array[] = $Value2;
+				}
 			}
 			elseif ($Begin == "INSERT INTO") {
 				$Table2 = $this->GetTableName($Value2);
@@ -159,8 +161,6 @@ class MySQLdumpDiff {
     							});
 								if (empty($MatchesArray)) 	{
 									$ValuesArray[] = $Value22;
-									$Result['INSERTS']++;
-									if (isset($ExtResult[$Table1]['INSERTS'])): $ExtResult[$Table1]['INSERTS']++; 	else: $ExtResult[$Table1]['INSERTS'] = 1; endif;
 									$Searching = FALSE;
 								}
 								$CurrKey = next($CorrespKey);
@@ -168,11 +168,17 @@ class MySQLdumpDiff {
 						}
 				 	}
 				 	if ($Searching && !empty($ValuesArray)) {
+				 		$num = count($ValuesArray);
+						$Result['INSERTS'] += $num;
+					if (isset($ExtResult[$Table2]['INSERTS'])): $ExtResult[$Table2]['INSERTS'] += $num; else: $ExtResult[$Table2]['INSERTS'] = $num; endif;						
 						$File3Array[] = "INSERT INTO `".$Table2."` VALUES ".implode(",", $ValuesArray).";";
 					}
 			 		//unset($File1Array['tables'][$CorrespKey]);
 				}
 				else {
+					$num = count($InsertArray2);
+					$Result['INSERTS'] += $num;
+					if (isset($ExtResult[$Table2]['INSERTS'])): $ExtResult[$Table2]['INSERTS'] += $num; else: $ExtResult[$Table2]['INSERTS'] = $num; endif;
 					$File3Array[] = $Value2;
 				}
 			}
@@ -185,22 +191,26 @@ class MySQLdumpDiff {
 		foreach ($Result as $Key=>$Value) {
 			$ResultString .= " &nbsp; ".$Key."=".$Value;
 		}
+		$DiffArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
 		$DiffArray[] = "-- File1: ".$this->File1;
 		$DiffArray[] = "-- File2: ".$this->File2;
 		$DiffArray[] = "-- Diff:".$ResultString;
-		$File3Array = array_merge($DiffArray, $File3Array);
+		$DiffArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
+		if ($this->Options[0] == 1) {
+			foreach ($ExtResult as $Key=>$Value) {
+				$ResArr = print_r($ExtResult[$Key], TRUE);
+				$ResArr = str_replace("Array", "", $ResArr);
+				$DiffArray[] = "-- ".$Key." &nbsp;".$ResArr;
+			}
+			$DiffArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
+		}		
+		$File3Array = array_merge($File2Array['header'], $DiffArray, $File3Array);
 
 		if ($this->Export == 'file') {
 			$this->OpenFile();
 			$this->WriteArrayToFile($File3Array);
 		}
 		else {
-			foreach ($ExtResult as $Key=>$Value) {
-				print "_".$Key."_ &nbsp; ";
-				print_r($ExtResult[$Key]);
-				print "<br>";
-			}
-			
 			foreach ($File3Array as $item) { print $item."<br>\n"; }
 		}
 	}
@@ -227,14 +237,18 @@ class MySQLdumpDiff {
 		$NewKey = 0;
 		$OutArray = array(
 			'tables' => array(),
+			'header' => array(),
 			'queries' => array()
 		);
 		$GatheringQuery = FALSE;
 		foreach ($FArray as $Key=>$Value) {
 			$Value = trim($Value);
 			$Begin = substr($Value, 0, 11);
-			if (($Value == "") || ($Value == "--") || ($Begin == "DROP TABLE ") || ($Begin == "-- Table st") || ($Begin == "-- Dumping ")) {
-				// No empty lines, no commented empty lines, no droping, no obvious comments
+			if (($Value == "") || ($Value == "--") || ($Value == "-- --------------------------------------------------------") || ($Begin == "DROP TABLE ") || ($Begin == "-- Database") || ($Begin == "-- Table st") || ($Begin == "-- Dumping ")) {
+				// No empty lines, no commented empty lines, no separators, no droping, no obvious comments
+			}
+			elseif (substr($Value, 0, 3) == "-- ") {
+				$OutArray['header'][] = $Value;
 			}
 			elseif ($GatheringQuery) {
 				$QueryString .= $Value;
@@ -321,7 +335,15 @@ class MySQLdumpDiff {
 
 	function GetSeparateInserts($QLine) {
 		$QLine = substr($QLine, 0, -1);
-		$QueryParts = explode(") VALUES", $QLine);
+		if (strpos($QLine, ") VALUES") !== FALSE) {
+			$QueryParts = explode(") VALUES", $QLine);
+		}
+		elseif (strpos($QLine, "` VALUES ") !== FALSE) {
+			$QueryParts = explode("` VALUES ", $QLine);
+		}
+		else {
+			die("Unknown INSERT format");			
+		}
 		$QueryParts[1] = str_replace("),(", ")#}{#(", $QueryParts[1]);
 		return explode("#}{#", $QueryParts[1]);
 	}
@@ -338,15 +360,14 @@ class MySQLdumpDiff {
 				$ReturnString .= "`".$Table."`.`".$Value."` = ".$ValParts[$Key]." AND "; 
 			}
 			else {
-				$ReturnPos = strpos($Line, $ValParts[$Key]) + strlen($ValParts[$Key]) + 1;
+				$ReturnString .= $ValParts[$Key].",";
 			}
 		}
 		if ($Type == "update") {
 			return substr($ReturnString, 0, -5); 
 		}
 		else {
-			$ReturnString = substr($Line, 0, $ReturnPos);
-			return $ReturnString; 
+			return str_replace("),", ")", $ReturnString); 
 		}
 	}
 
