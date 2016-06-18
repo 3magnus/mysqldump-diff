@@ -170,8 +170,13 @@ class MySQLdumpDiff {
 				 	if ($Searching && !empty($ValuesArray)) {
 				 		$num = count($ValuesArray);
 						$Result['INSERTS'] += $num;
-					if (isset($ExtResult[$Table2]['INSERTS'])): $ExtResult[$Table2]['INSERTS'] += $num; else: $ExtResult[$Table2]['INSERTS'] = $num; endif;						
-						$File3Array[] = "INSERT INTO `".$Table2."` VALUES ".implode(",", $ValuesArray).";";
+						if (isset($ExtResult[$Table2]['INSERTS'])): $ExtResult[$Table2]['INSERTS'] += $num; else: $ExtResult[$Table2]['INSERTS'] = $num; endif;
+						$i = 0;
+						while ($i < $num) {
+							$Slice = array_slice($ValuesArray, $i, 200); 
+							$File3Array[] = "INSERT INTO `".$Table2."` VALUES ".implode(",", $Slice).";";
+							$i += 200;
+						}
 					}
 			 		//unset($File1Array['tables'][$CorrespKey]);
 				}
