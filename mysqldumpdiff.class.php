@@ -191,26 +191,9 @@ class MySQLdumpDiff {
 				$File3Array[] = $Value2;
 			}
 		}
-		
-		$ResultString = "";
-		foreach ($Result as $Key=>$Value) {
-			$ResultString .= " &nbsp; ".$Key."=".$Value;
-		}
-		$DiffArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
-		$DiffArray[] = "-- File1: ".$this->File1;
-		$DiffArray[] = "-- File2: ".$this->File2;
-		$DiffArray[] = "-- Diff:".$ResultString;
-		$DiffArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
-		if ($this->Options[0] == 1) {
-			foreach ($ExtResult as $Key=>$Value) {
-				$ResArr = print_r($ExtResult[$Key], TRUE);
-				$ResArr = str_replace("Array", "", $ResArr);
-				$DiffArray[] = "-- ".$Key." &nbsp;".$ResArr;
-			}
-			$DiffArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
-		}		
-		$File3Array = array_merge($File2Array['header'], $DiffArray, $File3Array);
 
+		$DiffArray = $this->GetHeaderText($Result, $ExtResult);
+		$File3Array = array_merge($File2Array['header'], $DiffArray, $File3Array);
 		if ($this->Export == 'file') {
 			$this->OpenFile();
 			$this->WriteArrayToFile($File3Array);
@@ -220,23 +203,6 @@ class MySQLdumpDiff {
 		}
 	}
 
-
-	function OpenFile()
-	{
-		$this->FileDesc = fopen($this->File3,"w");
-	}
-
-
-	function WriteArrayToFile($FArray)
-	{
-		foreach ($FArray as $item)
-		{
-			fwrite($this->FileDesc, $item);
-		}
-		fclose($this->FileDesc);
-		print "<p>Differences saved in: <strong>".$this->File3."</strong>";
-	}
-	
 
 	function AssureOneQueryPerLine($FArray) {
 		$NewKey = 0;
@@ -393,6 +359,45 @@ class MySQLdumpDiff {
 			$ChangesSQL .= " `".$TableArray['Fields'][$Key]."` = ".$Value.",";
 		}
 		return substr($ChangesSQL, 0, -1);
+	}
+	
+
+	function GetHeaderText($ResultArray, $ExtResultArray) {
+		$ResultString = "";
+		foreach ($ResultArray as $Key=>$Value) {
+			$ResultString .= " &nbsp; ".$Key."=".$Value;
+		}
+		$HeaderArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
+		$HeaderArray[] = "-- File1: ".$this->File1;
+		$HeaderArray[] = "-- File2: ".$this->File2;
+		$HeaderArray[] = "-- Diff:".$ResultString;
+		$HeaderArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
+		if ($this->Options[0] == 1) {
+			foreach ($ExtResultArray as $Key=>$Value) {
+				$ResArr = print_r($ExtResultArray[$Key], TRUE);
+				$ResArr = str_replace("Array", "", $ResArr);
+				$HeaderArray[] = "-- ".$Key." &nbsp;".$ResArr;
+			}
+			$HeaderArray[] = "-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
+		}
+		return $HeaderArray;
+	}
+
+
+	function OpenFile()
+	{
+		$this->FileDesc = fopen($this->File3,"w");
+	}
+
+
+	function WriteArrayToFile($FArray)
+	{
+		foreach ($FArray as $item)
+		{
+			fwrite($this->FileDesc, $item);
+		}
+		fclose($this->FileDesc);
+		print "<p>Differences saved in: <strong>".$this->File3."</strong>";
 	}
 
 }
