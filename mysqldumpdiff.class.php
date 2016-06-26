@@ -199,7 +199,15 @@ class MySQLdumpDiff {
 			$this->WriteArrayToFile($File3Array);
 		}
 		else {
-			foreach ($File3Array as $item) { print $item."<br>\n"; }
+			$output = "";
+			$rows = 0;
+			foreach ($File3Array as $item) {
+				$output .= $item."\n";
+				$rows++;
+			}
+			print '<label for="diff-export">Diff SQL:</label><textarea id="diff-export" name="diff-sql" cols="60" rows="'.$rows.'">
+'.$output.'
+</textarea>';
 		}
 	}
 
