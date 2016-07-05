@@ -161,23 +161,25 @@ class MySQLdumpDiff {
 								$MatchesArray = array_filter($InsertArray1, function($Values) use ($UniqueValue) {
       	  						return (strpos($Values, $UniqueValue) !== FALSE);
     							});
-								if (empty($MatchesArray)) 	{
-									$ValuesArray[] = $Value22;
+								if (!empty($MatchesArray)) 	{
 									$Searching = FALSE;
 								}
 								$CurrKey = next($CorrespKey);
 							}
+							if ($Searching) {
+								$ValuesArray[] = $Value22;
+							}
 						}
 				 	}
-				 	if ($Searching && !empty($ValuesArray)) {
+				 	if (!empty($ValuesArray)) {
 				 		$num = count($ValuesArray);
 						$Result['INSERTS'] += $num;
 						if (isset($ExtResult[$Table2]['INSERTS'])): $ExtResult[$Table2]['INSERTS'] += $num; else: $ExtResult[$Table2]['INSERTS'] = $num; endif;
 						$i = 0;
 						while ($i < $num) {
-							$Slice = array_slice($ValuesArray, $i, 200); 
+							$Slice = array_slice($ValuesArray, $i, 50); 
 							$File3Array[] = "INSERT INTO `".$Table2."` VALUES ".implode(",", $Slice).";";
-							$i += 200;
+							$i += 50;
 						}
 					}
 			 		//unset($File1Array['tables'][$CorrespKey]);
@@ -197,10 +199,12 @@ class MySQLdumpDiff {
 		$DiffArray = $this->GetHeaderText($Result, $ExtResult);
 		$File3Array = array_merge($DiffArray, $File3Array);
 		if (!empty($this->Header)) {
-			$File3Array = array_merge($this->Header, $File3Array);
+			$HeaderArray = preg_split("/\\r\\n|\\r|\\n/", $this->Header);
+			$File3Array = array_merge($HeaderArray, $File3Array);
 		}
 		if (!empty($this->Footer)) {
-			$File3Array = array_merge($File3Array, $this->Footer);
+			$FooterArray = preg_split("/\\r\\n|\\r|\\n/", $this->Footer);
+			$File3Array = array_merge($File3Array, $FooterArray);
 		}
 		if ($this->Export == 'file') {
 			$this->OpenFile();
